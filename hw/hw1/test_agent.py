@@ -9,6 +9,7 @@ import json
 from model import Model
 from utils import *
 
+import torch
 
 def run_episode(env, agent, rendering=True, max_timesteps=1000):
     
@@ -19,11 +20,17 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000):
     while True:
         
         # TODO: preprocess the state in the same way than in in your preprocessing in train_agent.py
-        #    state = ...
-        
+        state = rgb2gray(state)
+        state_torch = torch.Tensor(state).view(1, 1, 96, 96)
         # TODO: get the action from your agent! If you use discretized actions you need to transform them to continuous
         # actions again. a needs to have a shape like np.array([0.0, 0.0, 0.0])
-        # a = ...
+        agent.model.eval()
+
+        with torch.no_grad():
+            a = agent.model(torch.Tensor(state_torch))
+
+        a = np.array(a)
+        a = a[0, :]
 
         next_state, r, done, info = env.step(a)   
         episode_reward += r       
@@ -47,8 +54,8 @@ if __name__ == "__main__":
     n_test_episodes = 15                  # number of episodes to test
 
     # TODO: load agent
-    # agent = Model(...)
-    # agent.load("models/agent.ckpt")
+    agent = Model(0)
+    agent.load("models/agent.ckpt")
 
     env = gym.make('CarRacing-v0').unwrapped
 
