@@ -5,23 +5,47 @@ import numpy as np
 import gym
 import os
 import json
-
+from collections import deque
 from model import Model
 from utils import *
 
 import torch
 
+def preprocess_X_for_conv(X, h):
+    zeros = np.zeros((h-1, 96, 96))
+    
+    new_X_train = np.concatenate((zeros, X))
+    new_X_list = []
+    
+    for i in range(X.shape[0]):
+        new_X_list.append(new_X_train[i: i+h])
+    
+    new_X_train = np.array(new_X_list)
+    
+    return new_X_train
+
 def run_episode(env, agent, rendering=True, max_timesteps=1000):
     
+    h = 12
+
     episode_reward = 0
     step = 0
 
     state = env.reset()
+    q = deque(h * [np.zeros((96, 96))], h)
+    
     while True:
         
         # TODO: preprocess the state in the same way than in in your preprocessing in train_agent.py
+
+        if step < h:
+            zeros = np.zeros((h - step - 1, 96, 96))
+
         state = rgb2gray(state)
-        state_torch = torch.Tensor(state).view(1, 1, 96, 96)
+        q.append(state)
+        state_torch = torch.Tensor(np.array(list(q))).unsqueeze(0)
+
+        # state_torch = torch.Tensor(state).view(1, 1, 96, 96)
         # TODO: get the action from your agent! If you use discretized actions you need to transform them to continuous
         # actions again. a needs to have a shape like np.array([0.0, 0.0, 0.0])
         agent.model.eval()
@@ -31,6 +55,8 @@ def run_episode(env, agent, rendering=True, max_timesteps=1000):
 
         a = np.array(a)
         a = a[0, :]
+
+        
 
         next_state, r, done, info = env.step(a)   
         episode_reward += r       
@@ -54,8 +80,8 @@ if __name__ == "__main__":
     n_test_episodes = 15                  # number of episodes to test
 
     # TODO: load agent
-    agent = Model(0)
-    agent.load("models/agent.ckpt")
+    agent = Model()
+    agent.load("models/agent_h12.ckpt")
 
     env = gym.make('CarRacing-v0').unwrapped
 
