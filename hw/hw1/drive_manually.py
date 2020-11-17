@@ -83,9 +83,19 @@ if __name__ == "__main__":
     while True:
         episode_reward = 0
         state = env.reset()
+        # print(state.shape)
+        # exit(0)
+        iterations = 0
+
         while True:
 
             next_state, r, done, info = env.step(a)
+            # print(next_state.shape)
+            # print(r)
+            # print(done)
+            # print(info)
+            # exit(0)
+
             episode_reward += r
 
             samples["state"].append(state)            # state has shape (96, 96, 3)
@@ -107,9 +117,14 @@ if __name__ == "__main__":
                 save_results(episode_rewards, "./results")
 
             env.render()
+            iterations += 1
             if done: 
                 break
         
+        print(iterations)
+        break
+            
+
         episode_rewards.append(episode_reward)
 
     env.close()
